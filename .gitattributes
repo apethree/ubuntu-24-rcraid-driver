@@ -1,2 +1,2 @@
-ubuntu/manager/9.3.2-00230_linux_raidxpert2.tar.zst filter=lfs diff=lfs merge=lfs -text
+linux/manager/9.3.2-00230_linux_raidxpert2.tar.zst filter=lfs diff=lfs merge=lfs -text
 windows/manager/UWP_Certified.tar.zst filter=lfs diff=lfs merge=lfs -text
