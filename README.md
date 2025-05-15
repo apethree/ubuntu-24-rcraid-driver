@@ -51,22 +51,22 @@ Build Manually(Very Recommended)
 	3. Boot from USB. Then open `Terminal`.
 	4. PreInstall `git dwarves linux-header-xxx mokutil build-essential` in Package management for your linux distro.
 		```bash
-git clone https://github.com/Bemly/raidxpert2-driver-installer.git
-git clone https://github.com/Bemly/rcraid-patch-932.git
-cd raidxpert2-driver-installer/driver_sdk/src
-patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
-sudo make clean
-sudo make
-sudo insmod rcraid.ko
+		git clone https://github.com/Bemly/raidxpert2-driver-installer.git
+		git clone https://github.com/Bemly/rcraid-patch-932.git
+		cd raidxpert2-driver-installer/driver_sdk/src
+		patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
+		sudo make clean
+		sudo make
+		sudo insmod rcraid.ko
 		```
 	5. Install your Linux distro into Raid Disk. (Dont Reboot)
 	6. PostInstall
 		```bash
-sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
-sudo chroot /target # switch chroot view in the following command.
-depmod -a `uname -r`
-mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
-reboot
+		sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
+		sudo chroot /target # switch chroot view in the following command.
+		depmod -a `uname -r`
+		mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
+		reboot
 		```
 	7. All done!
 
