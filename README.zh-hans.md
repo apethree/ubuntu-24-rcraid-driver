@@ -90,15 +90,104 @@ mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
 ```
 
 
-安装自编译驱动
+安装自编译驱动(推荐)
 ---------
 
-1. 
+先决条件: 5.x - 6.14内核版本的所有`Linux`发行版
+
+正常方式用`rufus`、`Balena Etcher`或`dd`烧录系统镜像到可移动介质，
+烧录完成后在介质内路径`/boot/grub/`里修改`grub.cfg`和`loopback.cfg`，
+其在每个`cfg`的`linux	/casper/vmlinuz`后追加`modprobe.blacklist=ahci,nvme`。
+
+进入`Live`系统，安装前先构建驱动：\
+在你的发行版包管理里面下载所需的构建工具: `git dwarves linux-header-xxx mokutil build-essential`
+> e.g. `apt install git dwarves linux-header-xxx mokutil build-essential | yes`
+```bash
+git clone https://github.com/Bemly/raidxpert2-driver-installer.git
+git clone https://github.com/Bemly/rcraid-patch-932.git
+cd raidxpert2-driver-installer/driver_sdk/src
+patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
+sudo make clean
+sudo make
+sudo insmod rcraid.ko
+```
+
+按照平常的教程安装系统，装好之后记得不要关机，
+还需要把驱动打入安装好的系统中：
+```bash
+sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
+sudo chroot /target # 进入到chroot视图执行下面两条命令
+depmod -a `uname -r`
+mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
+exit
+reboot
+```
+安装完成，重启进入系统即可。
 
 
-排错
+更新内核
 ---------
 
+更新内核完之后注意不要立即重启，
+因为有可能驱动和新版本内核ABI变动较大导致不能加载导致内核恐慌
+
+一般`Arch`是滚动内核发行版，注意运行完包管理`pacman yay paru`
+之后时刻查看下内核是否改变。
+一般`Ubuntu`是长期维护的稳定内核发行版，一般`apt update && apt full-upgrade`
+之后才会更新内核。
+
+更新完内核之后需要重新编译内核驱动文件：
+```bash
+git clone https://github.com/Bemly/raidxpert2-driver-installer.git
+git clone https://github.com/Bemly/rcraid-patch-932.git
+cd raidxpert2-driver-installer/driver_sdk/src
+patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
+export KERVER=<new kernel verison>
+sudo make clean
+sudo make KDIR=/lib/modules/`$KERVER`/build/
+sudo cp rcraid.ko /lib/modules/`$KERVER`/kernel/drivers/scsi/rcraid.ko
+sudo depmod -a `$KERVER`
+sudo cp /boot/initrd.img-`$KERVER` /boot/initrd.img-`$KERVER`.bak
+sudo mkinitramfs -o /boot/initrd.img-`$KERVER` `$KERVER`
+reboot
+```
+然后就可以愉快启动新内核的系统了，目前支持的内核是`6.14`
+新内核如果报错请自行`patch`,(如果有`patch`好的欢迎`PR`,thk www)
+
+报错解决方案
+---------
+
+报错之后建议回滚内核，一般不用删掉新内核，
+直接在grub里修改启动的内核即可：
+```bash
+sudo vi /etc/default/grub
+... # 此处省略，找到对应的启动项，修改为原内核
+# 更新grub2 每个发行版不一致 根据实际情况调整
+sudo update-grub
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+如果`编译成功`/`insmod/modprobe成功`却没有识别到阵列，
+```bash
+sudo dmesg | grep -i "license level"
+```
+如果无输出则玄学问题，暂时无解。
+
+![dmesg-output](pic/dmesg-output.jpg)
+
+如果有输出说明是许可证问题，使用下面的魔法方法解决：
+
+下载`imhex`等16进制编辑器,编辑`rcblob.x84_64`文件，
+跳转到`1353`地址，修改`14`为`11`即可。
+（仅供个人使用参考,不负任何责任)
+
+![imhex](pic/imhex.png)
+
+然后继续重新按照上述操作`make`编译项目即可，
+按理说即可如下图所示识别出对应阵列信息。
+
+![ubuntu-disk-array](pic/ubuntu-disk-array.jpg)
 
 手把手超详细双系统安装教程
 ---------
@@ -271,7 +360,7 @@ Dism /Image:"D:\" /Add-Driver /Driver:"C:\path\to\your\driver\folder" /Recurse
 
 ### 双系统 安装(Linux侧)
 
-下载驱动
+参照上方[教程](#安装自编译驱动\(推荐\))即可。
 
 
 ### 安装管理器
@@ -290,9 +379,11 @@ winget install -e --id 9nd45c02n872
 选择`ProductID`，输入`9nd45c02n872`，选择`RP`，确定。
 先下载安装对应架构的`VCLibs`依赖包，再下载安装本体。
 
+![win-disk-mark](pic/win-disk-mark.png)
+
 #### Linux侧
 
-
+TODO
 
 
 
