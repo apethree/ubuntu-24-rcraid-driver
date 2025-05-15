@@ -330,6 +330,39 @@ Dism /Image:"D:\" /Add-Driver /Driver:"C:\path\to\your\driver\folder" /Recurse
 
 参照上方[教程](#安装自编译驱动推荐)即可。
 
+进入到安装界面，点击关闭按钮，打开终端\
+![ubuntu-install1](pic/ubuntu-install1.png)
+
+`patch`驱动兼容代码\
+![ubuntu-install2](pic/ubuntu-install2.webp)
+
+编译内核驱动\
+![ubuntu-install3](pic/ubuntu-install3.png)
+
+`mokutil`负责签名驱动，此处输入一个密码，请记住此密码\
+![ubuntu-install4](pic/ubuntu-install4.png)
+
+编译完成后`sudo insmod rcraid.ko`，如果没有`Kernel Panic`说明安装成功
+
+可以用`modinfo`、`dmesg`检查一下是否加载成功\
+![ubuntu-install5](pic/ubuntu-install5.webp)
+
+如果成功的话就可以正常安装`Linux`了\
+![ubuntu-install6](pic/ubuntu-install6.png)
+![ubuntu-install7](pic/ubuntu-install7.png)
+
+装好之后不要急着重启，现在安装的系统还没打入`rcraid`驱动，
+现在放到`/lib`里面然后`modprobe`、`depmod`生成依赖映射关系文件`modules.dep`，
+备份下`initrd.img`内存启动镜像，然后`mkinitramfs`构建新的内存启动镜像\
+![ubuntu-install8](pic/ubuntu-install8.webp)
+
+重启时可能会注册密钥，选择`Enroll Key`输入刚才的密码继续即可生效\
+![mokutil-enroll-key](pic/mokutil-enroll-key.png)
+![mokutil-enroll-key2](pic/mokutil-enroll-key2.png)
+![mokutil-enroll-key3](pic/mokutil-enroll-key3.png)
+![mokutil-enroll-key4](pic/mokutil-enroll-key4.png)
+
+然后就大功告成辣~ `<3`
 
 ### 安装管理器
 
