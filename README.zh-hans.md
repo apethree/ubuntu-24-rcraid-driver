@@ -1,27 +1,30 @@
-笔记本 linux fakeraid 驱动安装教程
+笔记本 fakeraid 驱动安装教程
 =================================
 
 引入
 ---------
+
 官方写的脚本很糟糕，处于完全不能安装的地步，
 包括但不限于无法访问谷歌导致超时、apt软件名错误导致不能安装等。
 
 目前内核 5.x - 6.14 都能跑
 
-为了避免嫌我啰嗦，我就把日记放在后面了，[一件直达](#手把手超详细教程)（bushi
+为了避免嫌我啰嗦，我就把详细教程放在后面了，[一件直达](#手把手超详细双系统安装教程)（bushi
+
 
 安装二进制驱动
 ---------
+
 - 官方驱动包
 
 先决条件: Ubuntu 22.04.1 
 
-下载安装[官方驱动包](https://www.supermicro.com/wdl/driver/AMD/NVMe_RAID/RAID_Linux_Ubuntu_2.2.40-9.3.2.00230.zip)，
-根据里面附带的说明书执行即可。
+下载安装[官方驱动包](https://www.supermicro.com/wdl/driver/AMD/NVMe_RAID/RAID_Linux_Ubuntu_2.2.40-9.3.2.00230.zip)
+或[备用下载](linux/UBUNTU22.04.1/x64.tar.zst)，根据里面附带的说明书执行即可。
 
 > 预安装阶段:
 > 启动安装镜像,在`Grub2`界面`Try and Install Ubuntu`选项上按`e`键进入编辑模式
-> 在`splash quiet ---`处修改为`modprobe.blacklist=ahci,nvme break=mount ---`
+> 在`/casper/vmlinuz`的`splash quiet ---`处修改为`modprobe.blacklist=ahci,nvme break=mount ---`
 > 按下`F10`开始引导，正常情况进入`initramfs`阶段
 > ```bash
 > mkdir -p /tmp/dd
@@ -43,16 +46,63 @@
 
 - 新内核补丁驱动包
 
-先决条件: 支持`DKMS`、5.x-6.14内核版本的所有`Linux`发行版
+先决条件: 6.14内核版本的所有`Linux`发行版(如果你有空帮我把每个版本都编译一下)\
+TODO: 拿 github action workflow 跑些通用的长期维护内核用
+
+下载安装[驱动包](linux/KERNEL6+/x64.tar.zst)，
+正常方式用`rufus`、`Balena Etcher`或`dd`烧录系统镜像到可移动介质，
+烧录完成后在介质内路径`/boot/grub/`里修改`grub.cfg`和`loopback.cfg`，
+其在每个`cfg`的`linux	/casper/vmlinuz`后追加`modprobe.blacklist=ahci,nvme`。
+
+启动安装镜像，正常进入安装模式，在使用安装器分区之前，
+打开`Terminal`终端挂载驱动包，运行里面自带的ko。
+```bash
+mkdir -p /tmp/dd
+# 挂载装有驱动的文件夹(分区格式视具体情况而定)
+sudo mount -t vfat /dev/sxx /tmp/dd
+sudo insmod /tmp/dd/rcraid.ko
+```
+
+按理说此时注入成功将没有报错，即未发生`Kernel Panic`，
+详细自行查看`sudo dmesg | tail -20` 或 `modinfo rcraid`。
+
+正常安装系统到阵列中。
+
+安装完毕之后打开`terminal`将ko驱动打入安装好的系统中：
+```bash
+# 如果之前没有卸载驱动文件夹的话，否则执行2、3条
+sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
+# 挂载装有驱动的文件夹(分区格式视具体情况而定)
+sudo mount -t vfat /dev/sxx /tmp/ddp
+# 拷贝到内核模块里
+sudo cp /tmp/ddp/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
+# 切换到目标系统的根环境
+sudo chroot /target
+```
+进入系统`chroot`视图:
+```bash
+# 生成模块的依赖关系和映射文件
+depmod -a `uname -r`
+# 备份启动镜像 勇的话可以不用
+cp -ap /boot/initrd.img-`uname -r` /boot/initrd.img-`uname -r`.bak
+# 构建新的启动ramdisk内存文件系统
+mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
+```
+
 
 安装自编译驱动
 ---------
+
 1. 
 
+
+排错
+---------
 
 
 手把手超详细双系统安装教程
 ---------
+
 某天没事做翻`bios`发现自己笔记本除了`AHCI`的模式，还支持`RAID`模式嘞，
 奔着想要搞个`raid0`来提提速的想法，索性就来试一试这个传说中的笔记本`raid`模式。[^1]
 
@@ -115,7 +165,7 @@
 
 在`选择安装Windows的位置`界面正常应该显示多个无法识别的`Linux Swap`分区，
 此处选择`加载驱动程序`加载刚刚下载解压后的驱动文件夹，
-根据自己`阵列类型`选择对应驱动。[^4]
+根据自己`阵列类型`选择对应驱动。
 
 ![win-install](pic/win-install.png)
 
