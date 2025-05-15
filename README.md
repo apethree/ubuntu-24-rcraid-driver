@@ -27,18 +27,18 @@ Using Prebuilt Driver
 	2. Boot from USB. Click `Try and Install Ubuntu`
 	3. Click `Try Ubuntu Live` then open `Terminal` (PreInstall)
 		```bash
-mkdir -p /tmp/dd
-sudo mount -t vfat /dev/sdb1 /tmp/dd  # This `sdb1` is determined you downloaded path.
-sudo insmod /tmp/dd/rcraid.ko
+		mkdir -p /tmp/dd
+		sudo mount -t vfat /dev/sdb1 /tmp/dd  # This `sdb1` is determined you downloaded path.
+		sudo insmod /tmp/dd/rcraid.ko
 		```
 	4. Normal Install Ubuntu. ( Dont restart )
 	5. Dont Update your kernel! ( dont run apt full-upgrade, if already updated, switch kernel manully in grub2 plz :) . )
 	6. open `Terminal` (PostInstall)
 		```bash
-sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
-sudo chroot /target # switch chroot view in the following command.
-depmod -a `uname -r`
-mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
+		sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
+		sudo chroot /target # switch chroot view in the following command.
+		depmod -a `uname -r`
+		mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
 		```
 	7. `reboot`. All done!
 

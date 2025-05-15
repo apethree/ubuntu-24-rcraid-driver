@@ -154,40 +154,8 @@ reboot
 然后就可以愉快启动新内核的系统了，目前支持的内核是`6.14`
 新内核如果报错请自行`patch`,(如果有`patch`好的欢迎`PR`,thk www)
 
-报错解决方案
----------
+报错参见[报错解决方案](#报错解决方案)
 
-报错之后建议回滚内核，一般不用删掉新内核，
-直接在grub里修改启动的内核即可：
-```bash
-sudo vi /etc/default/grub
-... # 此处省略，找到对应的启动项，修改为原内核
-# 更新grub2 每个发行版不一致 根据实际情况调整
-sudo update-grub
-sudo grub2-mkconfig -o /boot/grub2/grub.cfg
-sudo grub-mkconfig -o /boot/grub/grub.cfg
-```
-
-如果`编译成功`/`insmod/modprobe成功`却没有识别到阵列，
-```bash
-sudo dmesg | grep -i "license level"
-```
-如果无输出则玄学问题，暂时无解。
-
-![dmesg-output](pic/dmesg-output.jpg)
-
-如果有输出说明是许可证问题，使用下面的魔法方法解决：
-
-下载`imhex`等16进制编辑器,编辑`rcblob.x84_64`文件，
-跳转到`1353`地址，修改`14`为`11`即可。
-（仅供个人使用参考,不负任何责任)
-
-![imhex](pic/imhex.png)
-
-然后继续重新按照上述操作`make`编译项目即可，
-按理说即可如下图所示识别出对应阵列信息。
-
-![ubuntu-disk-array](pic/ubuntu-disk-array.jpg)
 
 手把手超详细双系统安装教程
 ---------
@@ -360,7 +328,7 @@ Dism /Image:"D:\" /Add-Driver /Driver:"C:\path\to\your\driver\folder" /Recurse
 
 ### 双系统 安装(Linux侧)
 
-参照上方[教程](#安装自编译驱动\(推荐\))即可。
+参照上方[教程](#安装自编译驱动推荐)即可。
 
 
 ### 安装管理器
@@ -385,6 +353,41 @@ winget install -e --id 9nd45c02n872
 
 TODO
 
+
+报错解决方案
+---------
+
+报错之后建议回滚内核，一般不用删掉新内核，
+直接在grub里修改启动的内核即可：
+```bash
+sudo vi /etc/default/grub
+... # 此处省略，找到对应的启动项，修改为原内核
+# 更新grub2 每个发行版不一致 根据实际情况调整
+sudo update-grub
+sudo grub2-mkconfig -o /boot/grub2/grub.cfg
+sudo grub-mkconfig -o /boot/grub/grub.cfg
+```
+
+如果`编译成功`/`insmod/modprobe成功`却没有识别到阵列，
+```bash
+sudo dmesg | grep -i "license level"
+```
+如果无输出则玄学问题，暂时无解。
+
+![dmesg-output](pic/dmesg-output.jpg)
+
+如果有输出说明是许可证问题，使用下面的魔法方法解决：
+
+下载`imhex`等16进制编辑器,编辑`rcblob.x84_64`文件，
+跳转到`1353`地址，修改`14`为`11`即可。
+（仅供个人使用参考,不负任何责任)
+
+![imhex](pic/imhex.png)
+
+然后继续重新按照上述操作`make`编译项目即可，
+按理说即可如下图所示识别出对应阵列信息。
+
+![ubuntu-disk-array](pic/ubuntu-disk-array.jpg)
 
 
 ```plaintext
