@@ -48,7 +48,8 @@ Build Manually(Very Recommended)
 - 5.x - 6.14 Linux Kernel :
 	1. Download Linux Live ISO burn onto your USB.
 	2. Modify from `/casper/vmlinuz splash quiet ---` to `/casper/vmlinuz modprobe.blacklist=ahci,nvme break=mount ---` in `USB:/boot/grub/grub.cfg & loopback.cfg`.
-	3. Boot from USB. Then open `Terminal`.
+	3. Boot from USB. Then open `Terminal`.\
+		![ubuntu-install1](pic/ubuntu-install1.png)
 	4. PreInstall `git dwarves linux-header-xxx mokutil build-essential` in Package management for your linux distro.
 		```bash
 		git clone https://github.com/Bemly/raidxpert2-driver-installer.git
@@ -59,7 +60,13 @@ Build Manually(Very Recommended)
 		sudo make
 		sudo insmod rcraid.ko
 		```
-	5. Install your Linux distro into Raid Disk. (Dont Reboot)
+		![ubuntu-install2](pic/ubuntu-install2.webp)
+		![ubuntu-install3](pic/ubuntu-install3.png)
+		![ubuntu-install4](pic/ubuntu-install4.png)
+		![ubuntu-install5](pic/ubuntu-install5.webp)
+	5. Install your Linux distro into Raid Disk. (Dont Reboot)\
+		![ubuntu-install6](pic/ubuntu-install6.png)
+		![ubuntu-install7](pic/ubuntu-install7.png)
 	6. PostInstall
 		```bash
 		sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
@@ -68,7 +75,13 @@ Build Manually(Very Recommended)
 		mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
 		reboot
 		```
-	7. All done!
+		![ubuntu-install8](pic/ubuntu-install8.webp)
+	7. The key may be registered when restarting. Select `Enroll Key` and enter the password just now to continue and it will take effect.\
+		![mokutil-enroll-key](pic/mokutil-enroll-key.png)
+		![mokutil-enroll-key2](pic/mokutil-enroll-key2.png)
+		![mokutil-enroll-key3](pic/mokutil-enroll-key3.png)
+		![mokutil-enroll-key4](pic/mokutil-enroll-key4.png)
+	8. All done!
 
 Update Kernel
 ----------------------
