@@ -103,9 +103,9 @@ mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
 在你的发行版包管理里面下载所需的构建工具: `git dwarves linux-header-xxx mokutil build-essential`
 > e.g. `apt install git dwarves linux-header-xxx mokutil build-essential | yes`
 ```bash
-git clone https://github.com/Bemly/raidxpert2-driver-installer.git
+git clone https://github.com/Bemly/rcraid-driver-9.3.2-5.x-6.14.git
 git clone https://github.com/Bemly/rcraid-patch-932.git
-cd raidxpert2-driver-installer/driver_sdk/src
+cd rcraid-driver-9.3.2-5.x-6.14/driver_sdk/src
 patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
 sudo make clean
 sudo make
@@ -138,9 +138,9 @@ reboot
 
 更新完内核之后需要重新编译内核驱动文件：
 ```bash
-git clone https://github.com/Bemly/raidxpert2-driver-installer.git
+git clone https://github.com/Bemly/rcraid-driver-9.3.2-5.x-6.14.git
 git clone https://github.com/Bemly/rcraid-patch-932.git
-cd raidxpert2-driver-installer/driver_sdk/src
+cd rcraid-driver-9.3.2-5.x-6.14/driver_sdk/src
 patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
 export KERVER=<new kernel verison>
 sudo make clean

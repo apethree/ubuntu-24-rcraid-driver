@@ -52,9 +52,9 @@ Build Manually(Very Recommended)
 		![ubuntu-install1](pic/ubuntu-install1.png)
 	4. PreInstall `git dwarves linux-header-xxx mokutil build-essential` in Package management for your linux distro.
 		```bash
-		git clone https://github.com/Bemly/raidxpert2-driver-installer.git
+		git clone https://github.com/Bemly/rcraid-driver-9.3.2-5.x-6.14.git
 		git clone https://github.com/Bemly/rcraid-patch-932.git
-		cd raidxpert2-driver-installer/driver_sdk/src
+		cd rcraid-driver-9.3.2-5.x-6.14/driver_sdk/src
 		patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
 		sudo make clean
 		sudo make
@@ -86,9 +86,9 @@ Build Manually(Very Recommended)
 Update Kernel
 ----------------------
 ```bash
-git clone https://github.com/Bemly/raidxpert2-driver-installer.git
+git clone https://github.com/Bemly/rcraid-driver-9.3.2-5.x-6.14.git
 git clone https://github.com/Bemly/rcraid-patch-932.git
-cd raidxpert2-driver-installer/driver_sdk/src
+cd rcraid-driver-9.3.2-5.x-6.14/driver_sdk/src
 patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
 export KERVER=<new kernel verison>
 sudo make clean
