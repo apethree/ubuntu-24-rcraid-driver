@@ -97,7 +97,7 @@ endif
 #
 
 all: bbanner
-	$(MAKE) -C $(KDIR) M=$(shell pwd) modules
+	$(MAKE) -C $(KDIR) M=$(shell pwd) CONFIG_DEBUG_INFO_BTF_MODULES= modules
 #ifeq ($(shell /bin/mokutil --sb-state | cut -f2 -d\ ), enabled)
 #ifneq ($(shell id -u), 0)
 #	@echo "#"

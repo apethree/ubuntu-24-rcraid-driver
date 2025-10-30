@@ -1,0 +1,28 @@
+# Kernel module build artifacts
+*.ko
+*.o
+*.mod.c
+*.mod
+*.symvers
+*.order
+.tmp_versions/
+*.cmd
+Module.symvers
+modules.order
+vers.c
+
+# Photorec/data recovery artifacts
+photorec.log
+photorec.ses
+
+# Dkms specific
+dkms.conf
+
+# Other common build artifacts
+*~
+*.bak
+*.swp
+.vscode/
+
+# Ignore the Fixes file.
+README_new.md

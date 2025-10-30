@@ -7,7 +7,6 @@ This guide documents the **fixes and procedures** to successfully compile and in
 ### What's New in This Guide
 
 This README addresses critical compilation issues encountered with kernel 6.14+ and provides:
-
 - **BTF Compilation Fix** - Solution for `Unsupported DW_TAG_reference_type` errors
 - **Updated Makefile** - Modified to disable BTF generation for binary blob modules
 - **Complete build and installation workflow** for kernel 6.14.0-29-generic and newer
@@ -40,13 +39,42 @@ sudo apt install -y \
 
 ---
 
+## Issues Fixed
+
+### 1. BTF (BPF Type Format) Compilation Error
+
+**Problem:**
+```
+Unsupported DW_TAG_reference_type(0x10): type: 0x2a23f
+Encountered error while encoding BTF.
+make[4]: *** [scripts/Makefile.modfinal:57: rcraid.ko] Error 1
+```
+
+**Root Cause:**
+Kernel 6.14+ enables `CONFIG_DEBUG_INFO_BTF_MODULES` by default. The BTF encoder (`pahole`) cannot process the proprietary binary blob (`rcblob.x86_64.o`) included in the rcraid driver, causing build failures.
+
+**Solution:**
+Modified `driver_sdk/src/Makefile` line 100 to disable BTF generation:
+
+```makefile
+# Original:
+$(MAKE) -C $(KDIR) M=$(shell pwd) modules
+
+# Fixed:
+$(MAKE) -C $(KDIR) M=$(shell pwd) CONFIG_DEBUG_INFO_BTF_MODULES= modules
+```
+
+This change prevents the kernel build system from attempting BTF encoding on the module.
+
+---
+
 ## Build Instructions
 
 ### Step 1: Clone the Repository
 
 ```bash
 cd ~/Downloads
-git clone https://github.com/apethree/rcraid-driver-9.3.2-5.x-6.14.git
+git clone https://github.com/Bemly/rcraid-driver-9.3.2-5.x-6.14.git
 cd rcraid-driver-9.3.2-5.x-6.14/driver_sdk/src
 ```
 
@@ -65,7 +93,6 @@ sudo make
 ```
 
 **Expected Output:**
-
 ```
 ------------------------------------------------------------
 - building for kernel 6.14.0-29-generic
@@ -95,7 +122,6 @@ modinfo rcraid.ko
 ```
 
 **Expected:**
-
 - File size: ~12MB
 - Kernel version: `6.14.0-29-generic`
 - Signature: `sig_id: PKCS#7`, `sig_hashalgo: sha256`
@@ -111,7 +137,6 @@ The build process **automatically** creates and signs the module with a local ce
 ### First-Time Setup (if keys don't exist)
 
 If you've never built this driver before, the `mk_certs` script will:
-
 1. Generate a 4096-bit RSA signing key
 2. Create a self-signed X.509 certificate
 3. Import the certificate into MOK (Machine Owner Key) database
@@ -139,7 +164,6 @@ sudo mokutil --import /var/lib/rccert/certs/module_signing_key.der
 ```
 
 Enter a password when prompted. On next reboot:
-
 1. MOK Manager will appear (blue screen)
 2. Select **Enroll MOK**
 3. Select **Continue**
@@ -245,7 +269,6 @@ sudo reboot
 ### Issue: BTF Error Still Occurs
 
 **Symptom:**
-
 ```
 Encountered error while encoding BTF.
 make[4]: *** [scripts/Makefile.modfinal:57: rcraid.ko] Error 1
@@ -259,7 +282,6 @@ grep "CONFIG_DEBUG_INFO_BTF_MODULES=" driver_sdk/src/Makefile
 ```
 
 Should show:
-
 ```
 $(MAKE) -C $(KDIR) M=$(shell pwd) CONFIG_DEBUG_INFO_BTF_MODULES= modules
 ```
@@ -271,7 +293,6 @@ If not, manually edit line 100 in `driver_sdk/src/Makefile`.
 ### Issue: Module Fails to Load - "Required key not available"
 
 **Symptom:**
-
 ```
 insmod: ERROR: could not insert module rcraid.ko: Required key not available
 ```
@@ -287,7 +308,6 @@ Your signing key is not enrolled. See [Module Signing](#module-signing-secure-bo
 RAID arrays don't appear in `lsblk` or `/dev/`
 
 **Solution:**
-
 ```bash
 # Check if module loaded
 lsmod | grep rcraid
@@ -301,6 +321,132 @@ sudo modprobe rcraid
 # Check PCI devices
 lspci | grep -i raid
 ```
+
+---
+
+### Issue: Frame Size Warning
+
+**Symptom:**
+```
+rc_mem_ops.c:935:1: warning: the frame size of 1080 bytes is larger than 1024 bytes
+```
+
+**Solution:**
+This is a **warning**, not an error. The module will still build successfully. This can be safely ignored.
+
+---
+
+## Technical Details
+
+### Modified Files
+
+1. **`driver_sdk/src/Makefile`** (Line 100)
+   - Added `CONFIG_DEBUG_INFO_BTF_MODULES=` to build command
+   - Prevents BTF encoding on proprietary binary blob
+
+2. **`driver_sdk/src/rc_init.c`** (Already patched)
+   - Added kernel 6.14 compatibility for `rc_slave_cfg()` function signature
+   - Includes `<linux/vmalloc.h>` for kernel 6.10+
+
+3. **`driver_sdk/mk_certs`** (No changes needed)
+   - Certificate generation and module signing script
+
+### Build Artifacts
+
+After successful build:
+- `rcraid.ko` - Main kernel module (~12MB)
+- `Module.symvers` - Symbol version information
+- `*.o` - Object files (rc_init.o, rc_msg.o, etc.)
+
+### Signing Certificate Location
+
+- **Private Key:** `/var/lib/rccert/certs/module_signing_key.priv` (permissions: 0600)
+- **Public Certificate:** `/var/lib/rccert/certs/module_signing_key.der` (permissions: 0644)
+- **OpenSSL Config:** `/var/lib/rccert/certs/x509.genkey`
+
+---
+
+## Testing
+
+### Test Module Loading (Before Installation)
+
+```bash
+# Try loading without installing
+sudo insmod ./rcraid.ko
+
+# Check if loaded
+lsmod | grep rcraid
+
+# Check kernel messages
+dmesg | tail -20
+
+# Unload
+sudo rmmod rcraid
+```
+
+### Verify Signature
+
+```bash
+modinfo rcraid.ko | grep sig_
+```
+
+Expected output:
+```
+sig_id:         PKCS#7
+sig_key:        3E:DD:BF:F1:83:18:C2:11:A5:16:80:BE:BF:A4:9A:72:EB:A4:7D:BE
+sig_hashalgo:   sha256
+```
+
+---
+
+## Additional Resources
+
+- **Original Driver Source:** [thopiekar/rcraid-dkms#44](https://github.com/thopiekar/rcraid-dkms/pull/44#issuecomment-1013929676)
+- **Kernel 6.14 Patch:** [Bemly/rcraid-patch-932](https://github.com/Bemly/rcraid-patch-932)
+- **Ubuntu Secure Boot Guide:** [Ubuntu SecureBoot](https://ubuntu.com/blog/how-to-sign-things-for-secure-boot)
+
+---
+
+## Known Limitations
+
+1. **Binary Blob Dependency:** The driver includes a proprietary binary blob (`rcblob.x86_64.o`) which limits:
+   - BTF debugging information
+   - Source-level debugging
+   - Distribution in kernel mainline
+
+2. **Kernel Version Sensitivity:** May require updates for major kernel version changes (6.15+)
+
+3. **Architecture:** Currently only supports x86_64
+
+---
+
+## License
+
+This driver is proprietary software:
+- Copyright © 2020-2023 Advanced Micro Devices, Inc.
+- Use subject to AMD's written software license agreement
+- NOT GPL or open source licensed
+
+---
+
+## Support
+
+For issues specific to:
+- **Driver compilation:** Check this README and open an issue in the repository
+- **AMD RAID hardware:** Contact AMD Support
+- **Ubuntu installation:** Check Ubuntu documentation
+
+---
+
+## Changelog
+
+### 2025-10-04 - Kernel 6.14 BTF Fix
+- **Fixed:** BTF compilation error on kernel 6.14+
+- **Modified:** `Makefile` line 100 to disable `CONFIG_DEBUG_INFO_BTF_MODULES`
+- **Tested:** Ubuntu 24.04 with kernel 6.14.0-29-generic
+- **Status:** Build successful, module loads correctly
+
+---
 
 ## Quick Reference Commands
 
@@ -324,50 +470,6 @@ lsblk
 ```
 
 ---
-
-## Build Manually(Very Recommended)
-
-- 5.x - 6.14 Linux Kernel :
-  1.  Download Linux Live ISO burn onto your USB.
-  2.  Modify from `/casper/vmlinuz splash quiet ---` to `/casper/vmlinuz modprobe.blacklist=ahci,nvme break=mount ---` in `USB:/boot/grub/grub.cfg & loopback.cfg`.
-  3.  Boot from USB. Then open `Terminal`.\
-      ![ubuntu-install1](pic/ubuntu-install1.png)
-  4.  PreInstall `git dwarves linux-header-xxx mokutil build-essential` in Package management for your linux distro.
-      ```bash
-      git clone https://github.com/Bemly/rcraid-driver-9.3.2-5.x-6.14.git
-      git clone https://github.com/Bemly/rcraid-patch-932.git
-      cd rcraid-driver-9.3.2-5.x-6.14/driver_sdk/src
-      patch -p2 < ../../rcraid-patch-932/rcraid-932.patch
-      sudo make clean
-      sudo make
-      sudo insmod rcraid.ko
-      ```
-      ![ubuntu-install2](pic/ubuntu-install2.webp)
-      ![ubuntu-install3](pic/ubuntu-install3.png)
-      ![ubuntu-install4](pic/ubuntu-install4.png)
-      ![ubuntu-install5](pic/ubuntu-install5.webp)
-  5.  Install your Linux distro into Raid Disk. (Dont Reboot)\
-      ![ubuntu-install6](pic/ubuntu-install6.png)
-      ![ubuntu-install7](pic/ubuntu-install7.png)
-  6.  PostInstall
-      ```bash
-      sudo cp /tmp/dd/rcraid.ko /target/lib/modules/`uname -r`/kernel/drivers/scsi/rcraid.ko
-      sudo chroot /target # switch chroot view in the following command.
-      depmod -a `uname -r`
-      mkinitramfs -o /boot/initrd.img-`uname -r` `uname -r`
-      reboot
-      ```
-      ![ubuntu-install8](pic/ubuntu-install8.webp)
-  7.  The key may be registered when restarting. Select `Enroll Key` and enter the password just now to continue and it will take effect.\
-      ![mokutil-enroll-key](pic/mokutil-enroll-key.png)
-      ![mokutil-enroll-key2](pic/mokutil-enroll-key2.png)
-      ![mokutil-enroll-key3](pic/mokutil-enroll-key3.png)
-      ![mokutil-enroll-key4](pic/mokutil-enroll-key4.png)
-  8.  All done!
-
-## Update Kernel
-
-## Thanks to [https://github.com/Bemly/rcraid-driver-9.3.2-5.x-6.14]
 
 **Last Updated:** October 4, 2025
 **Tested On:** Ubuntu 24.04 LTS, Kernel 6.14.0-29-generic
